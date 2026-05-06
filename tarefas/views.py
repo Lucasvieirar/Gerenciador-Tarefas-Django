@@ -1,11 +1,13 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 
 from .forms import  TarefaForm
+from .models import TarefaModel
 from django.http import HttpRequest
 
 def tarefas_home(request):
     contexto = {
-        "nome": "Lucas"
+        "nome": "Lucas",
+        "tarefas":TarefaModel.objects.all()
     }
     return  render(request,'tarefas/home.html', contexto)
 
@@ -20,4 +22,17 @@ def tarefas_adicionar(request:HttpRequest):
         "form": TarefaForm
     }
     return render(request, 'tarefas/adicionar.html', contexto)
+
+def tarefas_remover(request: HttpRequest, id):
+    tarefa = get_object_or_404(TarefaModel, id=id)
+    tarefa.delete()
+    return redirect("tarefas:home")
+
+def tarefas_editar(request:HttpRequest, id):
+    tarefa = get_object_or_404(TarefaModel, id =id)
+    formulario =TarefaForm(instance=tarefa)
+    context={
+        'form':formulario
+    }
+    return render(request, 'tarefas/editar.html', context)
     
