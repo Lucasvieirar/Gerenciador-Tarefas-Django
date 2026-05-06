@@ -25,6 +25,11 @@ def tarefas_adicionar(request:HttpRequest):
 
 def tarefas_remover(request: HttpRequest, id):
     tarefa = get_object_or_404(TarefaModel, id=id)
+    if request.method == "POST":
+        formulario = TarefaForm(request.POST, instance=tarefa)
+        if formulario.is_valid():
+            formulario.save()
+            return redirect("tarefas:home")
     tarefa.delete()
     return redirect("tarefas:home")
 
