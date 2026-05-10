@@ -1,16 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" >
-        <title>Document</title>
-    </head>
-    <body>
-       <h>Editar Tarefa</h>
-       <form action="" method="post">
-        {% csrf_token %}
-        {{form}}
-        <input type="submit" value="Enviar">
-       </form>
-    </body>
-</html>
+{% extends 'base.html' %}
+
+{% block title %}Editar Tarefa{% endblock %}
+
+{% block content %}
+
+<h1 class="form-title">
+    Editar Tarefa 🛠️
+</h1>
+
+<form method="post">
+
+    {% csrf_token %}
+
+    {{form}}
+
+    <button class="btn submit-btn" type="submit">
+        Atualizar
+    </button>
+
+</form>
+
+{% endblock %}
