@@ -1,0 +1,11 @@
+{% if tarefa.completo %}
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold
+             bg-green-500/15 text-green-400 border border-green-500/20">
+  <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Concluída
+</span>
+{% else %}
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold
+             bg-amber-500/15 text-amber-400 border border-amber-500/20">
+  <i data-lucide="clock" class="w-3.5 h-3.5"></i> Pendente
+</span>
+{% endif %}

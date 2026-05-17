@@ -35,9 +35,9 @@ class TarefaModel(models.Model):
         CONCLUIDO   = "concluido",   "Concluído"
     
     nome = models.CharField(max_length=100)
-    descricao = models.TextField(nul=True, blank=True)
+    descricao = models.TextField(null=True, blank=True)
     completo = models.BooleanField(default=False)
-    Prioridade = models.CharField(
+    prioridade = models.CharField(
         max_length=10,
         choices=Prioridade.choices,
         default=Prioridade.MEDIA,
@@ -47,7 +47,7 @@ class TarefaModel(models.Model):
         choices=Status.choices,
         default=Status.A_FAZER,
     )
-    Categoria = models.ForeignKey(
+    categoria = models.ForeignKey(
         Categoria, 
         on_delete=models.SET_NULL,
         null= True, blank=True,

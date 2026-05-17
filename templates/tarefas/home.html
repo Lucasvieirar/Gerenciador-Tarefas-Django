@@ -1,92 +1,144 @@
-{% extends 'base.html' %}
 
-{% block title %}Minhas Tarefas{% endblock %}
+
+{% extends 'base.html' %}
+{% block title %}Dashboard — TaskFlow{% endblock %}
 
 {% block content %}
 
-<div class="topbar">
-
-    <div>
-        <h1>Olá, {{nome}} 👋</h1>
-        <p class="subtitle">
-            Organize sua produtividade com elegância.
-        </p>
-    </div>
-
-    <a href="{% url 'tarefas:adicionar' %}" class="btn">
-        + Nova Tarefa
-    </a>
-
+<!-- ── HEADER ── -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
+  <div>
+    <h1 class="text-4xl font-bold">Olá, {{ nome }} 👋</h1>
+    <p class="text-slate-400 mt-1">Organize sua produtividade com elegância.</p>
+  </div>
+  <a href="{% url 'tarefas:adicionar' %}"
+     class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500
+            px-5 py-3 rounded-xl font-semibold transition hover:-translate-y-1
+            hover:shadow-lg hover:shadow-indigo-500/30">
+    <i data-lucide="plus" class="w-5 h-5"></i> Nova Tarefa
+  </a>
 </div>
 
-<table>
+<!-- ── CARDS STATS ── -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+  {% for label, value, icon, color in stats %}
+  <div class="rounded-2xl bg-white/5 border border-white/10 p-5 flex items-center gap-4
+              hover:bg-white/10 transition">
+    <span class="p-3 rounded-xl {{ color }}">
+      <i data-lucide="{{ icon }}" class="w-6 h-6"></i>
+    </span>
+    <div>
+      <p class="text-2xl font-bold">{{ value }}</p>
+      <p class="text-slate-400 text-sm">{{ label }}</p>
+    </div>
+  </div>
+  {% endfor %}
+</div>
 
-    <thead>
-        <tr>
-            <th>Nome</th>
-            <th>Descrição</th>
-            <th>Status</th>
-            <th>Criado em</th>
-            <th>Ações</th>
+<!-- ── GRÁFICO + TABELA ── -->
+<div class="grid lg:grid-cols-3 gap-6 mb-10">
+
+  <!-- Donut chart -->
+  <div class="rounded-2xl bg-white/5 border border-white/10 p-6 flex flex-col items-center justify-center">
+    <p class="font-semibold text-slate-300 mb-4">Progresso Geral</p>
+    <canvas id="donutChart" class="max-w-[200px]"></canvas>
+  </div>
+
+  <!-- Tabela resumo -->
+  <div class="lg:col-span-2 rounded-2xl bg-white/5 border border-white/10 overflow-hidden">
+    <div class="px-6 py-4 border-b border-white/10 flex items-center justify-between">
+      <span class="font-semibold">Tarefas Recentes</span>
+      <a href="{% url 'tarefas:kanban' %}" class="text-indigo-400 hover:text-indigo-300 text-sm transition">
+        Ver Kanban →
+      </a>
+    </div>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-slate-400 uppercase text-xs tracking-widest">
+          <th class="px-6 py-3 text-left">Nome</th>
+          <th class="px-6 py-3 text-left">Prioridade</th>
+          <th class="px-6 py-3 text-left">Status</th>
+          <th class="px-6 py-3 text-left">Ações</th>
         </tr>
-    </thead>
-
-    <tbody>
-
+      </thead>
+      <tbody>
         {% for tarefa in tarefas %}
-
-        <tr>
-
-            <td>{{tarefa.nome}}</td>
-
-            <td>{{tarefa.descricao}}</td>
-
-            <td>
-
-                {% if tarefa.completo %}
-                    <span class="status complete">
-                        Completo
-                    </span>
-                {% else %}
-                    <span class="status pending">
-                        Pendente
-                    </span>
-                {% endif %}
-
-            </td>
-
-            <td>{{tarefa.data_criacao}}</td>
-
-            <td>
-
-                <div class="actions">
-
-                    <a
-                    href="{% url 'tarefas:editar' tarefa.id %}"
-                    class="action-btn edit">
-
-                    Editar
-
-                    </a>
-
-                    <a
-                    href="{% url 'tarefas:remover' tarefa.id %}"
-                    class="action-btn delete">
-
-                    Remover
-
-                    </a>
-
-                </div>
-
-            </td>
-
+        <tr id="tarefa-{{ tarefa.id }}"
+            class="border-t border-white/5 hover:bg-white/5 transition">
+          <td class="px-6 py-4 font-medium {% if tarefa.completo %}line-through text-slate-500{% endif %}">
+            {{ tarefa.nome }}
+          </td>
+          <td class="px-6 py-4">
+            {% include "tarefas/_prioridade_badge.html" %}
+          </td>
+          <td class="px-6 py-4">
+            <!-- Toggle sem reload via HTMX -->
+            <button hx-post="{% url 'tarefas:toggle' tarefa.id %}"
+                    hx-target="#status-{{ tarefa.id }}"
+                    hx-swap="outerHTML"
+                    class="cursor-pointer">
+              <span id="status-{{ tarefa.id }}">
+                {% include "tarefas/_status_badge.html" %}
+              </span>
+            </button>
+          </td>
+          <td class="px-6 py-4">
+            <div class="flex items-center gap-3">
+              <a href="{% url 'tarefas:editar' tarefa.id %}"
+                 class="p-2 rounded-lg bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/40 transition">
+                <i data-lucide="pencil" class="w-4 h-4"></i>
+              </a>
+              <button hx-delete="{% url 'tarefas:remover' tarefa.id %}"
+                      hx-target="#tarefa-{{ tarefa.id }}"
+                      hx-swap="outerHTML swap:0.3s"
+                      hx-confirm="Remover esta tarefa?"
+                      class="p-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/40 transition">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </td>
         </tr>
-
+        {% empty %}
+        <tr>
+          <td colspan="4" class="px-6 py-12 text-center text-slate-500">
+            <i data-lucide="inbox" class="w-10 h-10 mx-auto mb-3 opacity-40"></i>
+            <p>Nenhuma tarefa ainda. <a href="{% url 'tarefas:adicionar' %}" class="text-indigo-400 hover:underline">Criar agora</a></p>
+          </td>
+        </tr>
         {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 
-    </tbody>
+{% endblock %}
 
-</table>
+{% block extra_js %}
+<script>
+  // Donut Chart
+  new Chart(document.getElementById('donutChart'), {
+    type: 'doughnut',
+    data: {
+      labels: {{ chart_labels|safe }},
+      datasets: [{
+        data: {{ chart_data|safe }},
+        backgroundColor: ['#22c55e', '#6366f1'],
+        borderWidth: 0,
+        hoverOffset: 6,
+      }]
+    },
+    options: {
+      cutout: '72%',
+      plugins: { legend: { labels: { color: '#94a3b8' } } }
+    }
+  });
 
+  // HTMX toast ao deletar
+  document.body.addEventListener('htmx:afterRequest', e => {
+    if (e.detail.requestConfig.verb === 'delete') {
+      showToast('<i data-lucide="check" class="w-4 h-4"></i> Tarefa removida!', 'success');
+      lucide.createIcons();
+    }
+  });
+</script>
 {% endblock %}

@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% block title %}Kanban — TaskFlow{% endblock %}
+
+{% block content %}
+
+<!-- ── HEADER ── -->
+<div class="flex items-center justify-between mb-8">
+  <div>
+    <h1 class="text-3xl font-bold">Kanban Board</h1>
+    <p class="text-slate-400 mt-1">Arraste e solte para reorganizar.</p>
+  </div>
+  <a href="{% url 'tarefas:adicionar' %}"
+     class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500
+            px-5 py-3 rounded-xl font-semibold transition hover:-translate-y-1
+            hover:shadow-lg hover:shadow-indigo-500/30">
+    <i data-lucide="plus" class="w-5 h-5"></i> Nova Tarefa
+  </a>
+</div>
+
+<!-- ── COLUNAS ── -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5" id="kanban-board">
+
+  {% for status_key, status_label, tarefas_col in colunas %}
+  <div class="flex flex-col gap-3">
+
+    <!-- Cabeçalho da coluna -->
+    <div class="flex items-center justify-between px-1">
+      <span class="font-semibold text-sm uppercase tracking-widest text-slate-400">
+        {{ status_label }}
+      </span>
+      <span class="text-xs bg-white/10 px-2.5 py-1 rounded-full font-medium">
+        {{ tarefas_col|length }}
+      </span>
+    </div>
+
+    <!-- Drop zone -->
+    <div class="kanban-col min-h-[200px] rounded-2xl bg-white/5 border border-white/10 p-3 flex flex-col gap-3"
+         data-status="{{ status_key }}">
+
+      {% for tarefa in tarefas_col %}
+      <div class="kanban-card group bg-white/5 hover:bg-white/10 border border-white/10
+                  rounded-xl p-4 cursor-grab active:cursor-grabbing transition
+                  hover:shadow-lg hover:shadow-indigo-500/10 hover:-translate-y-0.5"
+           data-id="{{ tarefa.id }}">
+
+        <!-- Prioridade + menu -->
+        <div class="flex items-center justify-between mb-2">
+          {% include "tarefas/_prioridade_badge.html" %}
+          <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition">
+            <a href="{% url 'tarefas:editar' tarefa.id %}"
+               class="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/40 transition">
+              <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+            </a>
+            <button hx-delete="{% url 'tarefas:remover' tarefa.id %}"
+                    hx-target="closest .kanban-card"
+                    hx-swap="outerHTML swap:0.3s"
+                    hx-confirm="Remover esta tarefa?"
+                    class="p-1.5 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/40 transition">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Nome -->
+        <p class="font-semibold text-sm leading-snug {% if tarefa.completo %}line-through text-slate-500{% endif %}">
+          {{ tarefa.nome }}
+        </p>
+
+        <!-- Descrição -->
+        {% if tarefa.descricao %}
+        <p class="text-slate-400 text-xs mt-1 line-clamp-2">{{ tarefa.descricao }}</p>
+        {% endif %}
+
+        <!-- Rodapé do card -->
+        <div class="flex items-center justify-between mt-3 text-xs text-slate-500">
+          <span class="flex items-center gap-1">
+            <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+            {% if tarefa.prazo %}{{ tarefa.prazo }}{% else %}Sem prazo{% endif %}
+          </span>
+          {% if tarefa.categoria %}
+          <span class="px-2 py-0.5 rounded-full text-xs font-medium"
+                style="--cor:{{ tarefa.categoria.cor }};background-color:color-mix(in srgb,var(--cor) 20%,transparent);color:var(--cor)">
+            {{ tarefa.categoria.nome }}
+          </span>
+          {% endif %}
+        </div>
+
+      </div>
+      {% empty %}
+      <div class="text-center text-slate-600 py-8 text-sm select-none">
+        <i data-lucide="inbox" class="w-7 h-7 mx-auto mb-2 opacity-30"></i>
+        <p>Vazio</p>
+      </div>
+      {% endfor %}
+
+    </div>
+  </div>
+  {% endfor %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.querySelectorAll('.kanban-col').forEach(col => {
+    Sortable.create(col, {
+      group:     'kanban',          
+      animation: 150,
+      ghostClass: 'opacity-30',
+      dragClass:  'scale-105',
+      onEnd(evt) {
+        const status = evt.to.dataset.status;
+        const payload = [];
+        document.querySelectorAll('.kanban-col').forEach(c => {
+          c.querySelectorAll('.kanban-card').forEach((card, idx) => {
+            payload.push({ id: +card.dataset.id, status: c.dataset.status, ordem: idx });
+          });
+        });
+        fetch("{% url 'tarefas:reordenar' %}", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+          body: JSON.stringify(payload),
+        }).then(() => showToast('✅ Kanban atualizado!'));
+      }
+    });
+  });
+
+  function getCookie(name) {
+    return document.cookie.split(';').map(c => c.trim())
+      .find(c => c.startsWith(name + '='))?.split('=')[1] ?? '';
+  }
+</script>
+{% endblock %}

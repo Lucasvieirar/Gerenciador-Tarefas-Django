@@ -1,23 +1,97 @@
-{% extends 'base.html' %}
 
-{% block title %}Adicionar Tarefa{% endblock %}
+
+{% extends 'base.html' %}
+{% block title %}Nova Tarefa — TaskFlow{% endblock %}
 
 {% block content %}
+<div class="max-w-2xl mx-auto">
 
-<h1 class="form-title">
-    Nova Tarefa ✨
-</h1>
+ 
+  <a href="{% url 'tarefas:home' %}"
+     class="inline-flex items-center gap-2 text-slate-400 hover:text-white transition mb-8 text-sm">
+    <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao Dashboard
+  </a>
 
-<form method="post">
+  <!-- Card do form -->
+  <div class="bg-white/5 border border-white/10 rounded-2xl p-8"
+       x-data="{ loading: false }">
 
-    {% csrf_token %}
+    <h1 class="text-2xl font-bold flex items-center gap-3 mb-2">
+      <span class="p-2 bg-indigo-500/20 rounded-xl">
+        <i data-lucide="plus-circle" class="w-6 h-6 text-indigo-400"></i>
+      </span>
+      Nova Tarefa
+    </h1>
+    <p class="text-slate-400 text-sm mb-8">Preencha os campos abaixo para criar uma tarefa.</p>
 
-    {{form}}
+    <form method="post" @submit="loading = true" class="flex flex-col gap-5">
+      {% csrf_token %}
 
-    <button class="btn submit-btn" type="submit">
-        Salvar Tarefa
-    </button>
+      
+      <div class="flex flex-col gap-1.5">
+        <label class="text-sm font-medium text-slate-300">Nome da Tarefa *</label>
+        {{ form.nome }}
+      </div>
 
-</form>
+      
+      <div class="flex flex-col gap-1.5">
+        <label class="text-sm font-medium text-slate-300">Descrição</label>
+        {{ form.descricao }}
+      </div>
 
+      
+      <div class="grid grid-cols-2 gap-4">
+        <div class="flex flex-col gap-1.5">
+          <label class="text-sm font-medium text-slate-300">Prioridade</label>
+          {{ form.prioridade }}
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-sm font-medium text-slate-300">Status</label>
+          {{ form.status }}
+        </div>
+      </div>
+
+      
+      <div class="grid grid-cols-2 gap-4">
+        <div class="flex flex-col gap-1.5">
+          <label class="text-sm font-medium text-slate-300">Categoria</label>
+          {{ form.categoria }}
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-sm font-medium text-slate-300">Prazo</label>
+          {{ form.prazo }}
+        </div>
+      </div>
+
+     
+      <label class="flex items-center gap-3 cursor-pointer select-none">
+        {{ form.completo }}
+        <span class="text-sm text-slate-300">Marcar como concluída</span>
+      </label>
+
+      
+      {% if form.errors %}
+      <div class="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm">
+        {% for field in form %}{% for error in field.errors %}<p>⚠ {{ error }}</p>{% endfor %}{% endfor %}
+      </div>
+      {% endif %}
+
+      
+      <button type="submit"
+              class="mt-2 inline-flex items-center justify-center gap-2
+                     bg-indigo-600 hover:bg-indigo-500 px-6 py-3 rounded-xl
+                     font-semibold transition hover:-translate-y-1
+                     hover:shadow-lg hover:shadow-indigo-500/30 disabled:opacity-60"
+              :disabled="loading">
+        <span x-show="!loading" class="flex items-center gap-2">
+          <i data-lucide="save" class="w-5 h-5"></i> Salvar Tarefa
+        </span>
+        <span x-show="loading" class="flex items-center gap-2">
+          <i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Salvando...
+        </span>
+      </button>
+
+    </form>
+  </div>
+</div>
 {% endblock %}
